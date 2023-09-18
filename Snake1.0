@@ -1,0 +1,196 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<conio.h>//!!!???
+#include<math.h>
+#include<graphics.h>//!!!详解
+
+#define SNAKE_LENGTH 500
+#define HEIGHT 720
+#define WIDTH 1280
+#define R 10
+
+enum DIR//!!!这是什么
+{
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+};
+
+struct Snake
+{
+	int length;
+	int dir;
+	int speed;
+	POINT coor[SNAKE_LENGTH];//!!!point?
+}snake;
+
+struct Food
+{
+	int x;
+	int y;
+	int r;
+	bool flag;
+	DWORD color;
+}food;
+
+void initgame()
+{
+	initgraph(WIDTH, HEIGHT/*,SHOWCONSOLE*/);
+	srand(GetTickCount());//!!!!????
+	snake.length = 3;
+	snake.speed =R*2;
+	snake.dir = RIGHT;
+	for (int i = snake.length-1; i >= 0; i--)
+	{
+		snake.coor[i].x = R*2*(snake.length-1-i)+R;
+		snake.coor[i].y = R;
+	}
+	food.x = rand() % WIDTH;
+	food.y = rand() % HEIGHT;
+	food.color = RGB(rand() % 256, rand() % 256, rand() % 256);
+	food.r = rand() % R + 2 * R;
+	food.flag = 1;
+}
+
+void drawgame()
+{
+	BeginBatchDraw();//!!!作用？
+	setbkcolor(RGB(28, 115, 119));//!!!RGB取色
+	cleardevice();//!!!为什么要清空设备
+	//setfillcolor(RGB(127, 127, 127));
+	for (int i = 0; i < snake.length; i++)
+	{
+		solidcircle(snake.coor[i].x, snake.coor[i].y, R);
+	}
+	EndBatchDraw();
+	if (food.flag == 1)
+	{
+		solidcircle(food.x, food.y, food.r);
+	}
+}
+
+void snakemove()
+{
+	for (int i = snake.length-1; i > 0; i--)
+	{
+		snake.coor[i] = snake.coor[i - 1];
+	}
+	switch (snake.dir)
+	{
+	case UP:
+		if (snake.coor[0].y + R <= 0)
+		{
+			snake.coor[0].y = HEIGHT+R;
+		}
+		else
+		{
+			snake.coor[0].y -= snake.speed;
+		}
+			break;
+	case DOWN:
+		if (snake.coor[0].y + R >= HEIGHT)
+		{
+			snake.coor[0].y = -R;
+		}
+		else
+		{
+			snake.coor[0].y += snake.speed;
+		}
+		break;
+	case LEFT:
+		if (snake.coor[0].x - R <= 0)
+		{
+			snake.coor[0].x = WIDTH+R;
+		}
+		else
+		{
+			snake.coor[0].x -= snake.speed;
+		}
+		break;
+	case RIGHT:
+		if (snake.coor[0].x + R >= WIDTH)
+		{
+			snake.coor[0].x = -R;
+		}
+		else
+		{
+			snake.coor[0].x+= snake.speed;
+		}
+		break;
+	}
+}
+
+void keycontrol()
+{
+	//72 80 75 77 上下左右
+	if (_kbhit())///!!!???
+	{
+		switch (_getch())///!!!???
+		{
+		case 'w':
+		case 'W':
+		case 72:
+			if (snake.dir != DOWN)
+			{
+				snake.dir = UP;
+			}
+			break;
+		case 's':
+		case 'S':
+		case 80:
+			if (snake.dir != UP)
+			{
+				snake.dir = DOWN;
+			}
+			break;
+		case 'a':
+		case 'A':
+		case 75:
+			if (snake.dir != RIGHT)
+			{
+				snake.dir = LEFT;
+			}
+			break;
+		case 'd':
+		case 'D':
+		case 77:
+			if (snake.dir != LEFT)
+			{
+				snake.dir = RIGHT;
+			}
+			break;
+		}
+	}
+}
+
+void eatfood()
+{
+	if (food.flag==1&&(pow(food.x - snake.coor[0].x, 2) + pow(food.y - snake.coor[0].y, 2) <= pow(R + food.r,2)))
+	{
+		snake.length++;
+		food.flag = 0;
+	}
+	if (food.flag == 0)
+	{
+		food.x = rand() % WIDTH;
+		food.y = rand() % HEIGHT;
+		food.color = RGB(rand() % 256, rand() % 256, rand() % 256);
+		food.r = rand() % R + 2*R;
+		food.flag = 1;
+	}
+}
+
+int main()
+{
+	initgame();
+	while (1)
+	{
+		drawgame();
+		keycontrol();
+		snakemove();
+		eatfood();
+	 	Sleep(30);//!!!第一次用
+	}
+	return 0;
+}
