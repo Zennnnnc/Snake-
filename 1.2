@@ -1,0 +1,311 @@
+#define _CRT_SECURE_NO_WARNINGS
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<conio.h>//!!!???
+#include<math.h>
+#include<time.h>
+#include<graphics.h>
+#include<easyx.h>
+
+#define SNAKE_LENGTH 500
+#define HEIGHT 480
+#define WIDTH 640
+#define R 3
+#define FPS (1000/15)
+
+bool dieif = 0;
+int bestscore=0;
+
+enum DIR//!!!这是什么
+{
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+};
+
+struct Snake
+{
+	int length;
+	int dir;
+	int speed;
+	int score;
+	POINT coor[SNAKE_LENGTH] = {-20,-20};
+}snake;
+
+struct Food
+{
+	int x;
+	int y;
+	int r;
+	bool flag;
+	DWORD color;
+}food;
+
+void setfood()
+{
+	food.x = food.r + WIDTH / 10 + (rand() % (8 * WIDTH / 10 - 2 * food.r));
+	food.y = food.r + HEIGHT / 10 + (rand() % (8 * HEIGHT / 10 - 2 * food.r));
+	food.color = RGB(rand() % 256, rand() % 256, rand() % 256);
+	food.r = rand() % R + 2 * R;
+	food.flag = 1;
+}
+
+void setsnake()
+{
+	snake.length = 3;
+	snake.dir = RIGHT;
+	snake.speed = 2 * R;
+	snake.score = 0;
+	for (int i = snake.length - 1; i >= 0; i--)
+	{
+		snake.coor[i].x = R * 2 * (snake.length - 1 - i) + WIDTH / 2;
+		snake.coor[i].y = HEIGHT / 2;
+	}
+}
+
+void initgame()
+{
+	initgraph(WIDTH, HEIGHT/*,SHOWCONSOLE*/);
+}
+
+bool in()
+{
+	if (snake.coor[0].y - R <= HEIGHT / 10 || snake.coor[0].y + R >= 9 * HEIGHT / 10 || snake.coor[0].x - R <= WIDTH / 10 || snake.coor[0].x + R >= 9 * WIDTH / 10)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+void drawgame()
+{
+	int starttime = clock();
+	char showscore[50];
+	char BEST[50];
+	BeginBatchDraw();
+	cleardevice();
+	setbkcolor(RGB(28, 115, 119));
+	line(WIDTH / 10, HEIGHT / 10, 9 * WIDTH / 10, HEIGHT / 10);
+	line(WIDTH / 10, HEIGHT / 10, WIDTH / 10, 9 * HEIGHT / 10);
+	line(9 * WIDTH / 10, HEIGHT / 10, 9 * WIDTH / 10, 9 * HEIGHT / 10);
+	line(WIDTH / 10, 9 * HEIGHT / 10, 9 * WIDTH / 10, 9 * HEIGHT / 10);
+	for (int i = 0; i < snake.length; i++)
+	{
+		setfillcolor(WHITE);
+		solidcircle(snake.coor[i].x, snake.coor[i].y, R);
+	}
+	if (food.flag == 1)
+	{
+		setfillcolor(food.color);
+		solidcircle(food.x, food.y, food.r);
+	}
+	sprintf(showscore, "分数:%d", snake.score);
+	outtextxy(WIDTH-70, 5, showscore);
+	sprintf(BEST, "最高分数:%d", bestscore);
+	outtextxy(WIDTH - 170, 5, BEST);
+	outtextxy(0, 0, "  ");
+	EndBatchDraw();
+	int frametime = clock() - starttime;
+	if (frametime < FPS)
+	{
+		Sleep(FPS - frametime);
+	}
+}
+
+void snakemove()
+{
+	for (int i = snake.length-1; i > 0; i--)
+	{
+		snake.coor[i] = snake.coor[i - 1];
+	}
+	switch (snake.dir)
+	{
+	case UP:
+		if (!in())
+		{
+			dieif = 1;
+			return;
+		}
+		else
+		{
+			snake.coor[0].y -= snake.speed;
+		}
+			break;
+	case DOWN:
+		if (!in())
+		{
+			dieif = 1;
+			return;
+		}
+		else
+		{
+			snake.coor[0].y += snake.speed;
+		}
+		break;
+	case LEFT:
+		if (!in())
+		{
+			dieif = 1;
+			return;
+		}
+		else
+		{
+			snake.coor[0].x -= snake.speed;
+		}
+		break;
+	case RIGHT:
+		if (!in())
+		{
+			dieif = 1;
+			return;
+		}
+		else
+		{
+			snake.coor[0].x+= snake.speed;
+		}
+		break;
+	}
+}
+
+void hitbody()
+{
+	for (int i = 4; i < snake.length; i++)
+	{
+		if (pow(snake.coor[i].x - snake.coor[0].x, 2) + pow(snake.coor[i].y - snake.coor[0].y, 2) <= pow(2 * R,2))
+		{
+			printf("%f %f %f \n", pow(snake.coor[i].x - snake.coor[0].x, 2), pow(snake.coor[i].y - snake.coor[0].y, 2), pow(2 * R, 2));
+			dieif = 1;
+			return;
+		}
+	}
+}
+
+void keycontrol()
+{
+	//72 80 75 77 上下左右
+	if (_kbhit())///!!!???
+	{
+		switch (_getch())///!!!???
+		{
+		case 'w':
+		case 'W':
+		case 72:
+			if (snake.dir != DOWN)
+			{
+				snake.dir = UP;
+			}
+			break;
+		case 's':
+		case 'S':
+		case 80:
+			if (snake.dir != UP)
+			{
+				snake.dir = DOWN;
+			}
+			break;
+		case 'a':
+		case 'A':
+		case 75:
+			if (snake.dir != RIGHT)
+			{
+				snake.dir = LEFT;
+			}
+			break;
+		case 'd':
+		case 'D':
+		case 77:
+			if (snake.dir != LEFT)
+			{
+				snake.dir = RIGHT;
+			}
+			break;
+		case ' ':
+			while (1)
+			{
+				if (_getch() == ' ')
+				{
+					return;
+				}
+			}
+		}
+	}
+}
+
+void eatfood()
+{
+	if (food.flag==1&&(pow(food.x - snake.coor[0].x, 2) + pow(food.y - snake.coor[0].y, 2) <= pow(R + food.r,2)))
+	{
+		snake.length++;
+		snake.score++;
+		if (snake.score > bestscore)
+		{
+			bestscore = snake.score;
+		}
+		food.flag = 0;
+	}
+	if (food.flag == 0)
+	{
+		setfood();
+	}
+}
+
+void getBestScore(int* bestscore)
+{
+	FILE* fp = NULL;   //文件指针，指向成功打开的文件
+	//打开文件，以只读的方式r
+	fp = fopen("bestscore.txt", "r");
+
+	//如果文件不存在，打开文件，以写入的方式w
+	if (fp == NULL)
+	{
+		fp = fopen("bestscore.txt", "w");
+		fprintf(fp, "%-10d", *bestscore);
+	}
+	else
+		fscanf(fp, "%10d", bestscore);
+
+	//关闭文件
+	fclose(fp);
+}
+
+void storeBestScore(int bestscore)
+{
+	FILE* fp = NULL;
+
+	fp = fopen("bestscore.txt", "w");
+	fprintf(fp, "%-10d", bestscore);
+	fclose(fp);
+}
+
+int main()
+{
+	srand(GetTickCount());
+	initgame();
+Start:
+	getBestScore(&bestscore);
+	setsnake();
+	setfood();
+	while (1)
+	{
+		drawgame();
+		if (dieif == 1)
+		{
+			outtextxy(WIDTH / 2 - 32, HEIGHT / 2, "游戏结束");
+			outtextxy(WIDTH / 2 - 64, HEIGHT / 2 + 20, "按回车键重新开始");
+			dieif = 0;
+			storeBestScore(bestscore);
+			while (_getch() != 13)
+			{
+
+			}
+			goto Start;
+		}
+		keycontrol();
+		snakemove();
+		hitbody();
+		eatfood();
+	}
+	return 0;
+}
